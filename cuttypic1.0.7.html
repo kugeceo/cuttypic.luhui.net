@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>离线一键抠图工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .image-container {
+                @apply relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300;
+            }
+            .image-container:hover {
+                @apply border-primary shadow-md;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+            }
+            .btn-secondary {
+                @apply bg-secondary hover:bg-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+            }
+            .btn-accent {
+                @apply bg-accent hover:bg-accent/90 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+            }
+            .btn-outline {
+                @apply border border-gray-300 hover:border-primary text-gray-700 hover:text-primary font-medium py-2 px-4 rounded-lg transition-all duration-200;
+            }
+            .progress-bar {
+                @apply h-2 bg-gray-200 rounded-full overflow-hidden;
+            }
+            .progress-value {
+                @apply h-full bg-primary rounded-full transition-all duration-300;
+            }
+            .editor-tool {
+                @apply w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-scissors text-primary text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-dark">离线一键抠图工具</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="helpBtn" class="btn-outline flex items-center space-x-1">
+                    <i class="fa fa-question-circle"></i>
+                    <span class="hidden md:inline">帮助</span>
+                </button>
+                <button id="aboutBtn" class="btn-outline flex items-center space-x-1">
+                    <i class="fa fa-info-circle"></i>
+                    <span class="hidden md:inline">关于</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- 上传区域 -->
+        <section class="mb-10">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-dark">上传图片</h2>
+                <div id="dropArea" class="image-container p-8 text-center cursor-pointer">
+                    <input type="file" id="fileInput" accept="image/*" multiple class="hidden">
+                    <i class="fa fa-cloud-upload text-5xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-500 mb-2">拖放图片到此处，或点击选择图片</p>
+                    <p class="text-sm text-gray-400">支持JPG、PNG等格式，可批量上传</p>
+                    <button id="browseBtn" class="mt-4 btn-primary">
+                        <i class="fa fa-folder-open mr-2"></i>选择图片
+                    </button>
+                </div>
+                
+                <div class="mt-6 flex flex-wrap gap-4">
+                    <button id="batchProcessBtn" class="btn-primary flex items-center">
+                        <i class="fa fa-magic mr-2"></i>批量抠图
+                    </button>
+                    <button id="batchDownloadBtn" class="btn-secondary flex items-center" disabled>
+                        <i class="fa fa-download mr-2"></i>批量下载
+                    </button>
+                    <button id="clearAllBtn" class="btn-outline flex items-center">
+                        <i class="fa fa-trash mr-2"></i>清空所有
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 处理进度 -->
+        <section id="progressSection" class="mb-10 hidden">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-dark">处理进度</h2>
+                <div class="mb-2 flex justify-between">
+                    <span id="progressText">准备处理...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressBar" class="progress-value" style="width: 0%"></div>
+                </div>
+                <p id="processingImageName" class="mt-2 text-sm text-gray-500">准备就绪</p>
+            </div>
+        </section>
+
+        <!-- 图片处理结果 -->
+        <section>
+            <h2 class="text-xl font-semibold mb-4 text-dark">处理结果</h2>
+            <div id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 处理后的图片将在这里显示 -->
+                <div class="col-span-full text-center py-12 text-gray-500">
+                    <i class="fa fa-picture-o text-5xl mb-4 opacity-30"></i>
+                    <p>处理后的图片将显示在这里</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 编辑模态框 -->
+    <div id="editorModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-dark">编辑图片</h3>
+                <button id="closeEditorBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-auto p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-medium mb-2 text-gray-700">原图</h4>
+                        <div class="image-container">
+                            <img id="originalImage" src="" alt="原图" class="w-full h-auto">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-medium mb-2 text-gray-700">处理后</h4>
+                        <div class="image-container relative">
+                            <img id="editedImage" src="" alt="处理后图片" class="w-full h-auto">
+                            <canvas id="editCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+                        </div>
+                        
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <button class="editor-tool" data-tool="brush" title="画笔修复">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <button class="editor-tool" data-tool="eraser" title="橡皮擦">
+                                <i class="fa fa-eraser"></i>
+                            </button>
+                            <button class="editor-tool" data-tool="zoomIn" title="放大">
+                                <i class="fa fa-search-plus"></i>
+                            </button>
+                            <button class="editor-tool" data-tool="zoomOut" title="缩小">
+                                <i class="fa fa-search-minus"></i>
+                            </button>
+                            <button class="editor-tool" data-tool="reset" title="重置">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                            
+                            <div class="ml-auto flex items-center gap-2">
+                                <span class="text-sm text-gray-600">画笔大小:</span>
+                                <input type="range" id="brushSize" min="1" max="50" value="10" class="w-24">
+                                <span id="brushSizeValue" class="text-sm text-gray-600">10px</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t flex justify-end gap-3">
+                <button id="cancelEditBtn" class="btn-outline">取消</button>
+                <button id="saveEditBtn" class="btn-primary">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帮助模态框 -->
+    <div id="helpModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-dark">使用帮助</h3>
+                <button class="closeModal text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <h4 class="font-medium text-lg mb-3 text-primary">如何使用抠图工具</h4>
+                <ol class="list-decimal pl-5 mb-6 space-y-2">
+                    <li>点击"选择图片"按钮或拖放图片到上传区域</li>
+                    <li>点击"批量抠图"按钮开始处理所有上传的图片</li>
+                    <li>处理完成后，可以点击每张图片下方的"编辑"按钮进行二次修改</li>
+                    <li>使用编辑工具中的画笔和橡皮擦进行精细调整</li>
+                    <li>完成后可以单独下载图片或点击"批量下载"下载所有处理好的图片</li>
+                </ol>
+                
+                <h4 class="font-medium text-lg mb-3 text-primary">编辑工具说明</h4>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li><strong>画笔</strong>: 恢复被误删的部分</li>
+                    <li><strong>橡皮擦</strong>: 擦除多余的背景残留</li>
+                    <li><strong>放大/缩小</strong>: 放大图片进行精细编辑</li>
+                    <li><strong>重置</strong>: 恢复到初始抠图状态</li>
+                    <li><strong>画笔大小</strong>: 调整画笔和橡皮擦的尺寸</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关于模态框 -->
+    <div id="aboutModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-dark">关于工具</h3>
+                <button class="closeModal text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <i class="fa fa-scissors text-primary text-3xl mr-3"></i>
+                    <h4 class="text-xl font-bold">离线一键抠图工具</h4>
+                </div>
+                
+                <p class="mb-4 text-gray-600">
+                    这是一个基于Transformers.js的离线图片抠图工具，所有处理都在您的浏览器中完成，不会上传您的图片到任何服务器，保护您的隐私安全。
+                </p>
+                
+                <p class="mb-4 text-gray-600">
+                    支持批量处理多张图片，提供二次编辑功能，可以将处理后的图片保存为透明背景的PNG格式。
+                </p>
+                
+                <div class="mt-6">
+                    <h5 class="font-medium mb-2 text-gray-700">技术支持</h5>
+                    <p class="text-sm text-gray-500">基于Transformers.js和ONNX Runtime构建</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-8 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <p>离线一键抠图工具 &copy; 2023</p>
+            <p class="text-sm text-gray-400 mt-2">所有图片处理均在本地完成，保护您的隐私</p>
+        </div>
+    </footer>
+
+    <!-- 引入Transformers.js库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.3/dist/transformers.min.js"></script>
+    
+    <script>
+        // 全局变量
+        let selectedImages = [];
+        let processedImages = [];
+        let currentEditingIndex = -1;
+        let segmenter = null;
+        let canvas, ctx;
+        let currentTool = 'brush';
+        let brushSize = 10;
+        let isDrawing = false;
+        let zoom = 1;
+        let panX = 0;
+        let panY = 0;
+        let lastX = 0;
+        let lastY = 0;
+        let maskData = null;
+
+        // DOM元素
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const batchProcessBtn = document.getElementById('batchProcessBtn');
+        const batchDownloadBtn = document.getElementById('batchDownloadBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const processingImageName = document.getElementById('processingImageName');
+        const editorModal = document.getElementById('editorModal');
+        const closeEditorBtn = document.getElementById('closeEditorBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const saveEditBtn = document.getElementById('saveEditBtn');
+        const originalImage = document.getElementById('originalImage');
+        const editedImage = document.getElementById('editedImage');
+        const editCanvas = document.getElementById('editCanvas');
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        const helpBtn = document.getElementById('helpBtn');
+        const aboutBtn = document.getElementById('aboutBtn');
+        const helpModal = document.getElementById('helpModal');
+        const aboutModal = document.getElementById('aboutModal');
+        const closeModals = document.querySelectorAll('.closeModal');
+
+        // 初始化
+        async function init() {
+            // 初始化Canvas
+            canvas = editCanvas;
+            ctx = canvas.getContext('2d');
+            
+            // 加载模型
+            try {
+                showToast('正在加载AI模型，请稍候...');
+                segmenter = await pipeline('image-segmentation', 'Xenova/clipseg-rd64-refined');
+                showToast('模型加载完成，可以开始抠图了！', 'success');
+            } catch (error) {
+                console.error('模型加载失败:', error);
+                showToast('模型加载失败，请检查网络连接', 'error');
+            }
+            
+            // 事件监听
+            setupEventListeners();
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 上传相关
+            browseBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+            dropArea.addEventListener('dragover', handleDragOver);
+            dropArea.addEventListener('drop', handleDrop);
+            
+            // 按钮事件
+            batchProcessBtn.addEventListener('click', processAllImages);
+            batchDownloadBtn.addEventListener('click', downloadAllImages);
+            clearAllBtn.addEventListener('click', clearAllImages);
+            
+            // 编辑模态框事件
+            closeEditorBtn.addEventListener('click', closeEditor);
+            cancelEditBtn.addEventListener('click', closeEditor);
+            saveEditBtn.addEventListener('click', saveEditedImage);
+            
+            // 画笔大小调整
+            brushSizeInput.addEventListener('input', (e) => {
+                brushSize = parseInt(e.target.value);
+                brushSizeValue.textContent = `${brushSize}px`;
+            });
+            
+            // 编辑工具事件
+            document.querySelectorAll('.editor-tool').forEach(tool => {
+                tool.addEventListener('click', (e) => {
+                    document.querySelectorAll('.editor-tool').forEach(t => t.classList.remove('bg-primary', 'text-white'));
+                    e.target.closest('.editor-tool').classList.add('bg-primary', 'text-white');
+                    currentTool = e.target.closest('.editor-tool').dataset.tool;
+                });
+            });
+            
+            // Canvas事件
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('wheel', handleZoom);
+            
+            // 帮助和关于模态框
+            helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+            aboutBtn.addEventListener('click', () => aboutModal.classList.remove('hidden'));
+            
+            closeModals.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    helpModal.classList.add('hidden');
+                    aboutModal.classList.add('hidden');
+                });
+            });
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', (e) => {
+                if (e.target === helpModal) helpModal.classList.add('hidden');
+                if (e.target === aboutModal) aboutModal.classList.add('hidden');
+                if (e.target === editorModal) closeEditor();
+            });
+        }
+
+        // 处理文件选择
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                addImages(files);
+                fileInput.value = ''; // 允许重复选择同一文件
+            }
+        }
+
+        // 处理拖放
+        function handleDragOver(e) {
+            e.preventDefault();
+            dropArea.classList.add('border-primary', 'bg-primary/5');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            dropArea.classList.remove('border-primary', 'bg-primary/5');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                addImages(files);
+            }
+        }
+
+        // 添加图片到列表
+        function addImages(files) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.match('image.*')) continue;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedImages.push({
+                        id: Date.now() + i,
+                        name: file.name,
+                        src: e.target.result,
+                        file: file
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            updateResultsContainer();
+            batchDownloadBtn.disabled = processedImages.length === 0;
+        }
+
+        // 更新结果容器
+        function updateResultsContainer() {
+            if (selectedImages.length === 0 && processedImages.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-500">
+                        <i class="fa fa-picture-o text-5xl mb-4 opacity-30"></i>
+                        <p>处理后的图片将显示在这里</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            resultsContainer.innerHTML = '';
+            
+            // 显示所有图片（包括已处理和未处理的）
+            [...selectedImages, ...processedImages].forEach((image, index) => {
+                const isProcessed = processedImages.some(img => img.id === image.id);
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-md overflow-hidden';
+                
+                card.innerHTML = `
+                    <div class="aspect-video bg-gray-100 relative">
+                        <img src="${image.src}" alt="${image.name}" class="w-full h-full object-contain">
+                        ${isProcessed ? '<div class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">已处理</div>' : ''}
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-medium text-gray-800 truncate mb-2">${image.name}</h3>
+                        <div class="flex gap-2">
+                            ${!isProcessed ? `
+                                <button data-id="${image.id}" class="process-btn flex-1 btn-primary text-sm py-1">
+                                    <i class="fa fa-magic mr-1"></i>抠图
+                                </button>
+                            ` : `
+                                <button data-id="${image.id}" class="edit-btn flex-1 btn-accent text-sm py-1">
+                                    <i class="fa fa-edit mr-1"></i>编辑
+                                </button>
+                                <button data-id="${image.id}" class="download-btn flex-1 btn-secondary text-sm py-1">
+                                    <i class="fa fa-download mr-1"></i>下载
+                                </button>
+                            `}
+                            <button data-id="${image.id}" class="delete-btn w-10 btn-outline text-sm py-1">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(card);
+                
+                // 添加事件监听
+                if (!isProcessed) {
+                    card.querySelector('.process-btn').addEventListener('click', () => {
+                        processImage(image.id);
+                    });
+                } else {
+                    card.querySelector('.edit-btn').addEventListener('click', () => {
+                        openEditor(image.id);
+                    });
+                    card.querySelector('.download-btn').addEventListener('click', () => {
+                        downloadImage(image.id);
+                    });
+                }
+                
+                card.querySelector('.delete-btn').addEventListener('click', () => {
+                    deleteImage(image.id);
+                });
+            });
+        }
+
+        // 处理单张图片
+        async function processImage(imageId) {
+            if (!segmenter) {
+                showToast('模型尚未加载完成，请稍候', 'error');
+                return;
+            }
+            
+            const imageIndex = selectedImages.findIndex(img => img.id === imageId);
+            if (imageIndex === -1) return;
+            
+            const image = selectedImages[imageIndex];
+            
+            try {
+                showProgress(true);
+                updateProgress(0, `正在处理: ${image.name}`);
+                
+                // 创建图片元素用于处理
+                const img = new Image();
+                img.src = image.src;
+                
+                await new Promise(resolve => {
+                    img.onload = resolve;
+                });
+                
+                // 进行图像分割（抠图）
+                updateProgress(30, `正在分析图像: ${image.name}`);
+                
+                const result = await segmenter(image.src, {
+                    threshold: 0.5,
+                    return_mask: true
+                });
+                
+                updateProgress(70, `正在生成结果: ${image.name}`);
+                
+                // 创建透明背景的图片
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // 绘制原始图像
+                ctx.drawImage(img, 0, 0);
+                
+                // 根据掩码创建透明区域
+                if (result.mask) {
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+                    
+                    // 处理掩码数据
+                    for (let i = 0; i < data.length; i += 4) {
+                        const maskIndex = (i / 4) * 4; // 假设掩码是单通道的
+                        if (maskIndex < result.mask.data.length && result.mask.data[maskIndex] < 128) {
+                            data[i + 3] = 0; // 设置透明度为0
+                        }
+                    }
+                    
+                    ctx.putImageData(imageData, 0, 0);
+                }
+                
+                // 将处理后的图片添加到结果列表
+                const processedSrc = canvas.toDataURL('image/png');
+                
+                // 从选中列表移除，添加到处理完成列表
+                const [processedImage] = selectedImages.splice(imageIndex, 1);
+                processedImage.src = processedSrc;
+                processedImage.mask = result.mask; // 保存掩码用于编辑
+                processedImages.push(processedImage);
+                
+                updateProgress(100, `处理完成: ${image.name}`);
+                showToast(`图片 "${image.name}" 处理完成`, 'success');
+                
+                // 更新UI
+                updateResultsContainer();
+                batchDownloadBtn.disabled = processedImages.length === 0;
+                
+                // 延迟隐藏进度条，让用户看到完成状态
+                setTimeout(() => {
+                    showProgress(false);
+                }, 500);
+                
+            } catch (error) {
+                console.error('处理图片失败:', error);
+                showToast(`处理图片失败: ${error.message}`, 'error');
+                showProgress(false);
+            }
+        }
+
+        // 批量处理所有图片
+        async function processAllImages() {
+            if (selectedImages.length === 0) {
+                showToast('请先上传图片', 'warning');
+                return;
+            }
+            
+            if (!segmenter) {
+                showToast('模型尚未加载完成，请稍候', 'error');
+                return;
+            }
+            
+            showProgress(true);
+            
+            try {
+                for (let i = 0; i < selectedImages.length; i++) {
+                    const image = selectedImages[i];
+                    const progress = Math.round((i / selectedImages.length) * 100);
+                    updateProgress(progress, `正在处理 ${i+1}/${selectedImages.length}: ${image.name}`);
+                    
+                    // 处理图片（复用单个处理函数）
+                    await processImage(image.id);
+                }
+                
+                showToast(`全部 ${selectedImages.length + processedImages.length} 张图片处理完成`, 'success');
+            } catch (error) {
+                console.error('批量处理失败:', error);
+                showToast(`批量处理失败: ${error.message}`, 'error');
+            } finally {
+                showProgress(false);
+            }
+        }
+
+        // 打开编辑器
+        function openEditor(imageId) {
+            const imageIndex = processedImages.findIndex(img => img.id === imageId);
+            if (imageIndex === -1) return;
+            
+            currentEditingIndex = imageIndex;
+            const image = processedImages[imageIndex];
+            
+            // 设置原始图片和处理后的图片
+            originalImage.src = image.file ? URL.createObjectURL(image.file) : image.src;
+            editedImage.src = image.src;
+            
+            // 初始化Canvas
+            const img = new Image();
+            img.src = image.src;
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // 绘制掩码
+                if (image.mask) {
+                    const maskCanvas = document.createElement('canvas');
+                    maskCanvas.width = img.width;
+                    maskCanvas.height = img.height;
+                    const maskCtx = maskCanvas.getContext('2d');
+                    
+                    const maskImage = new Image();
+                    maskImage.src = image.mask;
+                    maskImage.onload = () => {
+                        maskCtx.drawImage(maskImage, 0, 0, img.width, img.height);
+                        maskData = maskCtx.getImageData(0, 0, img.width, img.height);
+                        resetCanvas();
+                    };
+                }
+            };
+            
+            // 重置编辑工具
+            document.querySelectorAll('.editor-tool').forEach(t => t.classList.remove('bg-primary', 'text-white'));
+            document.querySelector('[data-tool="brush"]').classList.add('bg-primary', 'text-white');
+            currentTool = 'brush';
+            zoom = 1;
+            panX = 0;
+            panY = 0;
+            
+            // 显示编辑模态框
+            editorModal.classList.remove('hidden');
+        }
+
+        // 关闭编辑器
+        function closeEditor() {
+            editorModal.classList.add('hidden');
+            currentEditingIndex = -1;
+        }
+
+        // 保存编辑后的图片
+        function saveEditedImage() {
+            if (currentEditingIndex === -1) return;
+            
+            // 将Canvas内容与原图合并
+            const resultCanvas = document.createElement('canvas');
+            const resultCtx = resultCanvas.getContext('2d');
+            
+            const img = new Image();
+            img.src = processedImages[currentEditingIndex].src;
+            img.onload = () => {
+                resultCanvas.width = img.width;
+                resultCanvas.height = img.height;
+                
+                // 绘制原图
+                resultCtx.drawImage(img, 0, 0);
+                
+                // 根据编辑后的掩码更新透明度
+                const imageData = resultCtx.getImageData(0, 0, resultCanvas.width, resultCanvas.height);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    const maskIndex = i; // 假设掩码是RGBA格式
+                    if (maskIndex < maskData.data.length && maskData.data[maskIndex + 3] < 128) {
+                        data[i + 3] = 0; // 设置透明度为0
+                    }
+                }
+                
+                resultCtx.putImageData(imageData, 0, 0);
+                
+                // 更新图片数据
+                processedImages[currentEditingIndex].src = resultCanvas.toDataURL('image/png');
+                
+                // 更新UI
+                updateResultsContainer();
+                closeEditor();
+                showToast('图片编辑已保存', 'success');
+            };
+        }
+
+        // 重置Canvas
+        function resetCanvas() {
+            if (!maskData) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.putImageData(maskData, 0, 0);
+        }
+
+        // 绘图相关函数
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panX) / zoom;
+            const y = (e.clientY - rect.top - panY) / zoom;
+            lastX = x;
+            lastY = y;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing || !maskData) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panX) / zoom;
+            const y = (e.clientY - rect.top - panY) / zoom;
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = brushSize;
+            
+            if (currentTool === 'brush') {
+                // 画笔工具 - 恢复背景（白色表示保留）
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 255)';
+            } else if (currentTool === 'eraser') {
+                // 橡皮擦工具 - 移除背景（黑色表示透明）
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = 'rgba(0, 0, 0, 255)';
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            // 更新掩码数据
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            maskData.data.set(imageData.data);
+            
+            lastX = x;
+            lastY = y;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // 处理缩放
+        function handleZoom(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // 计算缩放前鼠标在图像上的位置
+            const imageX = (mouseX - panX) / zoom;
+            const imageY = (mouseY - panY) / zoom;
+            
+            // 应用缩放
+            if (e.deltaY < 0) {
+                // 放大
+                zoom = Math.min(zoom * 1.1, 5);
+            } else {
+                // 缩小
+                zoom = Math.max(zoom / 1.1, 0.1);
+            }
+            
+            // 调整平移，使鼠标指向的点保持在相同位置
+            panX = mouseX - imageX * zoom;
+            panY = mouseY - imageY * zoom;
+            
+            // 应用变换
+            applyTransform();
+        }
+
+        // 应用变换（缩放和平移）
+        function applyTransform() {
+            canvas.style.transform = `scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px)`;
+        }
+
+        // 下载单张图片
+        function downloadImage(imageId) {
+            const image = processedImages.find(img => img.id === imageId);
+            if (!image) return;
+            
+            const link = document.createElement('a');
+            link.download = image.name.replace(/\.[^/.]+$/, "") + "_抠图.png";
+            link.href = image.src;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast(`图片 "${image.name}" 已下载`, 'success');
+        }
+
+        // 批量下载所有图片
+        function downloadAllImages() {
+            if (processedImages.length === 0) return;
+            
+            // 简单实现：逐个下载
+            processedImages.forEach((image, index) => {
+                setTimeout(() => {
+                    downloadImage(image.id);
+                }, index * 300); // 错开时间，避免浏览器限制
+            });
+            
+            showToast(`开始下载 ${processedImages.length} 张图片`, 'success');
+        }
+
+        // 删除图片
+        function deleteImage(imageId) {
+            // 检查是否在选中列表中
+            const selectedIndex = selectedImages.findIndex(img => img.id === imageId);
+            if (selectedIndex !== -1) {
+                selectedImages.splice(selectedIndex, 1);
+                showToast('图片已删除', 'info');
+                updateResultsContainer();
+                return;
+            }
+            
+            // 检查是否在处理完成列表中
+            const processedIndex = processedImages.findIndex(img => img.id === imageId);
+            if (processedIndex !== -1) {
+                processedImages.splice(processedIndex, 1);
+                showToast('图片已删除', 'info');
+                updateResultsContainer();
+                batchDownloadBtn.disabled = processedImages.length === 0;
+                return;
+            }
+        }
+
+        // 清空所有图片
+        function clearAllImages() {
+            if (selectedImages.length === 0 && processedImages.length === 0) return;
+            
+            if (confirm('确定要清空所有图片吗？')) {
+                selectedImages = [];
+                processedImages = [];
+                updateResultsContainer();
+                batchDownloadBtn.disabled = true;
+                showToast('所有图片已清空', 'info');
+            }
+        }
+
+        // 进度条控制
+        function showProgress(show) {
+            progressSection.classList.toggle('hidden', !show);
+        }
+
+        function updateProgress(percent, text) {
+            progressBar.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+            progressText.textContent = text;
+        }
+
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            // 创建toast元素
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-y-10 opacity-0`;
+            
+            // 根据类型设置样式
+            switch (type) {
+                case 'success':
+                    toast.classList.add('bg-green-500', 'text-white');
+                    toast.innerHTML = `<i class="fa fa-check-circle mr-2"></i>${message}`;
+                    break;
+                case 'error':
+                    toast.classList.add('bg-red-500', 'text-white');
+                    toast.innerHTML = `<i class="fa fa-times-circle mr-2"></i>${message}`;
+                    break;
+                case 'warning':
+                    toast.classList.add('bg-yellow-500', 'text-white');
+                    toast.innerHTML = `<i class="fa fa-exclamation-triangle mr-2"></i>${message}`;
+                    break;
+                default:
+                    toast.classList.add('bg-blue-500', 'text-white');
+                    toast.innerHTML = `<i class="fa fa-info-circle mr-2"></i>${message}`;
+            }
+            
+            // 添加到页面
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 10);
+            
+            // 自动消失
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // 初始化应用
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
