@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>关于我们 - 鲁虺抠图宝(luhuiCuttyPic) | 免费AI智能抠图工具背后的故事</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="description" content="了解鲁虺抠图宝(luhuiCuttyPic)背后的故事 - 我们如何开发这款免费的AI智能抠图工具，以及我们对技术创新和用户隐私的承诺。探索我们开发的其他实用在线工具。" />
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.ico">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#ec4899">
+
+    <meta name="keywords" content="抠图宝团队,CuttyPic开发者,AI抠图工具开发,Toolooz工具,在线工具开发,WebGPU技术,开源项目" />
+    <meta name="author" content="抠图宝" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Tailwind CSS -->
+    <script src="http://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .gradient-bg {
+        background: linear-gradient(to bottom right, #fdf2f8, #ede9fe);
+      }
+      .tool-card {
+        transition: all 0.3s ease;
+      }
+      .tool-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      .tool-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body class="gradient-bg min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <a href="/" class="flex items-center gap-2 hover:opacity-90 transition-opacity">
+                <img src="/favicon.ico" alt="抠图宝" class="w-8 h-8" />
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+                  抠图宝
+                </h1>
+              </a>
+            </div>
+            <div class="hidden md:block">
+              <div class="ml-10 flex items-center space-x-4">
+                <a href="/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-pink-500 transition-colors">
+                  <i class="fas fa-home mr-1"></i> 首页
+                </a>
+                <a href="/guide.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-pink-500 transition-colors">
+                  <i class="fas fa-book mr-1"></i> 使用指南
+                </a>
+                <a href="/about.html" class="px-3 py-2 rounded-md text-sm font-medium text-pink-500">
+                  <i class="fas fa-info-circle mr-1"></i> 关于我们
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+      <!-- 开发小故事 -->
+      <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+        <div class="p-6 border-b border-gray-200">
+          <h1 class="text-3xl font-bold text-gray-800 mb-2">关于我们</h1>
+          <p class="text-gray-600">了解抠图宝的开发故事和我们的其他实用工具</p>
+        </div>
+        
+        <div class="p-6 border-b border-gray-200">
+          <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <i class="fas fa-book-open text-pink-500 mr-3"></i> 开发小故事
+            </h2>
+            
+            <div class="space-y-4 text-gray-700">
+              <div class="relative">
+                <div class="absolute -top-6 -left-6 w-24 h-24 bg-yellow-200 rounded-full opacity-20"></div>
+                <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-pink-200 rounded-full opacity-20"></div>
+                <div class="relative z-10">
+                  <p class="mb-4">大家好，我是抠图宝的独立开发者。这个小工具的诞生，源于我和身边朋友们的一个共同烦恼。</p>
+                  
+                  <p class="mb-4">作为一名自媒体创作者，我经常需要处理各种图片。有时候需要给产品照片抠图换白底，有时候需要给证件照换底色，还有朋友开网店，总是抱怨产品照片背景处理太麻烦。市面上的抠图工具要么收费，要么需要注册账号，要么带水印，用起来都不够顺手。</p>
+                  
+                  <p class="mb-4">有一次，我在研究AI技术时，偶然接触到了几个强大的背景去除模型，比如RMBG-1.4和MODNet。让我惊喜的是，这些模型不仅效果出色，而且可以直接在浏览器中运行，不需要将用户的图片上传到服务器。</p>
+                  
+                  <p class="mb-4">这个发现让我灵光一闪：何不自己开发一个简单好用、完全免费、不留水印，还能保护用户隐私的抠图工具呢？于是，"抠图宝"的想法就这样诞生了。</p>
+                  
+                  <p class="mb-4">开发过程并不总是一帆风顺。最初，我选择了RMBG-1.4作为核心模型，因为它轻量级，适合各种设备运行。后来发现WebGPU技术可以让处理速度提升一倍，我又加入了MODNet作为可选模型。</p>
+                  
+                  <p class="mb-4">遇到的最大挑战是性能优化。AI模型文件比较大，直接加载会导致浏览器卡顿。我花了不少时间研究分块加载和性能优化，才让整个处理过程变得流畅。另外，WebGPU虽然快，但并非所有浏览器都支持，所以我添加了自动检测功能，为用户选择最合适的处理方案。</p>
+                  
+                  <p class="mb-4">经过一段时间的开发和测试，"抠图宝"终于与大家见面了。它不仅能一键去除背景，还提供了简单的编辑工具，可以更换背景、调整颜色等。对于需要证件照的朋友，可以轻松换底色；对于电商卖家，可以快速制作白底产品图；对于普通用户，可以轻松美化照片。</p>
+                  
+                  <p class="mb-4">我还在尝试接入更强大的RMBG-2.0模型，但目前还在调试中，遇到了一些技术难题。等问题解决后，会第一时间更新，为大家带来更好的抠图体验。</p>
+                  
+                  <p>作为一名独立开发者，我的目标是创造简单实用、完全免费的工具，解决大家在日常生活和工作中的实际问题。抠图宝只是我开发的众多工具中的一个，希望它能为您带来便利。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 我们的其他工具 -->
+        <div class="p-6">
+          <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <i class="fas fa-toolbox text-pink-500 mr-3"></i> 我们的其他工具
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- PdfZap -->
+              <a href="http://pdfzap.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-purple-100 text-purple-600">
+                  <i class="fas fa-bolt"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">PdfZap</h3>
+                <p class="text-gray-600 text-sm mb-3">免费的PDF批量压缩工具，轻松减小PDF文件大小，无需注册，保护隐私。</p>
+                <div class="flex items-center text-purple-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+              
+              <!-- LIVP转换器 -->
+              <a href="http://livp.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-pink-100 text-pink-600">
+                  <i class="fas fa-images"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">LIVP转换器</h3>
+                <p class="text-gray-600 text-sm mb-3">在线批量转换LIVP文件，支持转换为JPG、提取HEIC和MOV格式，简单快捷。</p>
+                <div class="flex items-center text-pink-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+              
+              <!-- twitdloader -->
+              <a href="http://twitdloader.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-green-100 text-green-600">
+                  <i class="fas fa-t"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">twitdloader</h3>
+                <p class="text-gray-600 text-sm mb-3">输入推文URL，一键下载高清推特视频，支持多种分辨率，推特视频下载器。</p>
+                <div class="flex items-center text-green-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+              
+              <!-- RevizePic -->
+              <a href="http://revizepic.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-pink-100 text-pink-600">
+                  <i class="fas fa-wand-magic-sparkles"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">RevizePic</h3>
+                <p class="text-gray-600 text-sm mb-3">免费专业的在线图像画质增强工具，支持超分辨率增强、智能降噪、色彩优化等16种功能。</p>
+                <div class="flex items-center text-pink-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+              
+              <!-- 纸模版 -->
+              <a href="http://paperme.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-purple-100 text-purple-600">
+                  <i class="fas fa-file-lines"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">纸模版</h3>
+                <p class="text-gray-600 text-sm mb-3">自定义打印纸生成器，免费在线创建和打印自定义纸张，支持横线纸、方格纸、点阵纸等。</p>
+                <div class="flex items-center text-purple-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+              
+              <!-- 视频转换宝 -->
+              <a href="http://livecapture.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-blue-100 text-blue-600">
+                  <i class="fas fa-film"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">视频转换宝</h3>
+                <p class="text-gray-600 text-sm mb-3">免费的视频转GIF动图、实况照片(LIVP)工具，简单易用，无需安装软件。</p>
+                <div class="flex items-center text-blue-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+              
+              <!-- SlimPic瘦图 -->
+              <a href="http://slimpic.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-pink-100 text-pink-600">
+                  <i class="fas fa-compress-alt"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">SlimPic瘦图</h3>
+                <p class="text-gray-600 text-sm mb-3">免费的将图片批量压缩和转换为AVIF、JPEG、JXL、PNG、WebP等格式，提高网站加载速度。</p>
+                <div class="flex items-center text-pink-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+              
+              <!-- 裁图刀 -->
+              <a href="http://snaptrim.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-pink-100 text-pink-600">
+                  <i class="fas fa-cut"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">裁图刀</h3>
+                <p class="text-gray-600 text-sm mb-3">专业的在线图片裁剪工具，内置小红书、微信等多个社交媒体平台预设尺寸，轻松裁剪。</p>
+                <div class="flex items-center text-pink-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+              
+              <!-- 拼图宝 -->
+              <a href="http://picweave.luhui.net" target="_blank" class="tool-card bg-white rounded-lg p-5 border border-gray-200 shadow-sm hover:shadow-lg">
+                <div class="tool-icon bg-purple-100 text-purple-600">
+                  <i class="fas fa-th"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">拼图宝</h3>
+                <p class="text-gray-600 text-sm mb-3">完全免费、简单易用的在线图片拼接工具，提供多种网格和拼贴布局模板，一键创建精美拼图。</p>
+                <div class="flex items-center text-purple-600">
+                  <span class="text-sm font-medium">立即使用</span>
+                  <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                </div>
+              </a>
+            </div>
+            
+            <div class="mt-8 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-6 border border-pink-100">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">关于抠图宝</h3>
+              <p class="text-gray-700 mb-4">抠图宝是一个免费、实用、注重隐私的在线抠图工具，旨在解决用户在日常工作和生活中遇到的抠图问题。我们坚信好工具应该是免费、易用且尊重用户隐私的。</p>
+              <p class="text-gray-700">如果您有任何问题、建议或合作意向，欢迎联系我们：</p>
+              <div class="flex items-center mt-3">
+                <i class="fas fa-envelope text-pink-500 text-xl mr-3"></i>
+                <a href="http://luhui.net/cn/mail#2e474048416e434f474200425b465b4700404b5a" class="text-pink-600 hover:underline font-medium"><span class="__cf_email__" data-cfemail="365f585059765b575f5a185a435e435f18585342">[email&#160;protected]</span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white mt-12 border-t border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <a href="/" class="flex items-center gap-2 mb-4 hover:opacity-90 transition-opacity">
+              <img src="/favicon-small.png" alt="抠图宝" class="w-4 h-4 flex-shrink-0" style="width: '16px', height: '16px'" />
+              <h3 class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+                抠图宝
+              </h3>
+            </a>
+            <p class="text-gray-500 text-sm">
+              智能一键抠图工具，让创作更简单
+            </p>
+            <div class="flex space-x-4 mt-4">
+              <a href="weixin://dl/chat?kugeceo" class="text-gray-400 hover:text-pink-500 transition-colors" title="微信号: kugeceo">
+                <i class="fab fa-weixin text-xl"></i>
+              </a>
+              <a href="http://weibo.com/kugeceo" target="_blank" class="text-gray-400 hover:text-pink-500 transition-colors">
+                <i class="fab fa-weibo text-xl"></i>
+              </a>
+              <a href="http://github.com/kugeceo" target="_blank" class="text-gray-400 hover:text-pink-500 transition-colors">
+                <i class="fab fa-github text-xl"></i>
+              </a>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800 mb-4">快速链接</h4>
+            <ul class="space-y-2 text-sm">
+              <li><a href="/" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 首页</a></li>
+              <li><a href="/guide.html" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 使用指南</a></li>
+              <li><a href="/about.html" class="text-pink-500 flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 关于我们</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800 mb-4">法律信息</h4>
+            <ul class="space-y-2 text-sm">
+              <li><a href="/privacy.html" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 隐私政策</a></li>
+              <li><a href="/terms.html" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 使用条款</a></li>
+              <li><a href="/copyright.html" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 版权信息</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800 mb-4">联系我们</h4>
+            <ul class="space-y-2 text-sm">
+              <li class="text-gray-500 flex items-start">
+                <i class="fas fa-envelope mt-1 mr-2 text-pink-400"></i> <a href="http://luhui.net/cn/mail" class="__cf_email__" data-cfemail="365f585059765b575f5a185a435e435f18585342">[email&#160;protected]</a>
+              </li>
+              <li class="text-gray-500 flex items-start">
+                <i class="fas fa-map-marker-alt mt-1 mr-2 text-pink-400"></i> 太阳系地球村大中华东部战区
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="border-t border-gray-200 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
+          <p class="text-sm text-gray-500">
+            Copyright  © 2004-01-11 luhui.net all rights reserved.
+          </p>
+          <div class="flex space-x-4 mt-4 md:mt-0">
+            <a href="/" class="text-gray-500 hover:text-pink-500 transition-colors">首页</a>
+            <a href="/guide.html" class="text-gray-500 hover:text-pink-500 transition-colors">使用指南</a>
+            <a href="/about.html" class="text-pink-500 font-medium">关于我们</a>
+            <a href="/privacy.html" class="text-gray-500 hover:text-pink-500 transition-colors">隐私政策</a>
+            <a href="/terms.html" class="text-gray-500 hover:text-pink-500 transition-colors">使用条款</a>
+            <a href="/copyright.html" class="text-gray-500 hover:text-pink-500 transition-colors">版权信息</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  <!-- Cloudflare Pages Analytics --><script data-cfasync="false" src="/assets/email-decode.min.js"></script><script defer src='/assets/beacon.min.js#' data-cf-beacon='{"token": "d263ce6354a849419f7f4e5ab3278764"}'></script><!-- Cloudflare Pages Analytics --><script defer src="/assets/beacon.min.js#/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"89d3238df51f47f19b854890f713445d","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

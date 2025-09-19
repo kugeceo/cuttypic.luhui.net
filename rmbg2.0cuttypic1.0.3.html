@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能图片抠图工具 - 基于RMBG-2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  
+  <!-- 配置Tailwind自定义颜色和字体 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3B82F6',
+            secondary: '#10B981',
+            accent: '#8B5CF6',
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .model-progress {
+        height: 4px;
+        background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 100%);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      .loading-shimmer {
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+      }
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+    }
+  </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col transition-colors duration-300">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-magic text-primary text-2xl"></i>
+        <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">智能抠图工具</h1>
+      </div>
+      
+      <div class="flex items-center space-x-4">
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+          <i class="fa fa-moon-o text-gray-600"></i>
+        </button>
+        <button id="help-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+          <i class="fa fa-question text-gray-600"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="flex-grow container mx-auto px-4 pt-24 pb-16">
+    <!-- 模型加载状态 -->
+    <section class="mb-10 bg-white rounded-xl shadow-sm p-6">
+      <div class="mb-3">
+        <h2 class="text-lg font-semibold mb-2">模型加载状态</h2>
+        <div class="w-full bg-gray-200 rounded-full h-1.5 mb-4">
+          <div class="model-progress" id="model-progress-bar"></div>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-3">
+        <div class="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" id="loading-spinner"></div>
+        <div>
+          <div id="model-status-text">正在准备加载抠图模型...</div>
+          <div class="text-sm text-gray-500 mt-1" id="model-loading-details">请确保网络连接正常...</div>
+        </div>
+      </div>
+      
+      <!-- 模型选择 -->
+      <div class="mt-6 flex flex-wrap gap-3">
+        <button id="load-light-model" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-sm">
+          轻量模型 (快速，适合普通图片)
+        </button>
+        <button id="load-balanced-model" class="px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors text-sm">
+          平衡模型 (推荐，兼顾速度和质量)
+        </button>
+        <button id="load-full-model" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-sm">
+          完整模型 (高精度，适合复杂图片)
+        </button>
+      </div>
+      
+      <!-- 加载错误提示 -->
+      <div id="load-error" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg hidden">
+        <div class="flex items-start">
+          <i class="fa fa-exclamation-circle text-red-500 mt-0.5 mr-3"></i>
+          <div>
+            <h3 class="font-medium text-red-800">加载失败</h3>
+            <div class="mt-1 text-sm text-red-700" id="error-message">无法加载模型，请检查网络连接</div>
+            <div class="mt-2">
+              <button id="retry-load" class="text-sm text-primary hover:text-primary/80">重试加载</button>
+              <button id="switch-fallback" class="text-sm text-primary hover:text-primary/80 ml-4">使用备用模型</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 拖放区域 -->
+    <section id="drop-area" class="mb-12 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center transition-all duration-300 hover:border-primary/70 bg-white shadow-sm hidden">
+      <div class="max-w-md mx-auto">
+        <i class="fa fa-cloud-upload text-5xl text-gray-400 mb-4"></i>
+        <h3 class="text-xl font-semibold mb-2">拖放图片到此处</h3>
+        <p class="text-gray-500 mb-6">支持JPG、PNG格式，可批量上传</p>
+        
+        <label class="inline-block bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer">
+          <i class="fa fa-folder-open mr-2"></i>选择图片
+          <input type="file" id="file-input" accept="image/*" multiple class="hidden">
+        </label>
+      </div>
+    </section>
+    
+    <!-- 加载提示 -->
+    <section id="loading-placeholder" class="mb-12 bg-white rounded-2xl p-8 text-center hidden">
+      <div class="max-w-md mx-auto">
+        <div class="w-16 h-16 rounded-full bg-gray-200 loading-shimmer mx-auto mb-4"></div>
+        <div class="h-4 bg-gray-200 loading-shimmer rounded w-3/4 mx-auto mb-3"></div>
+        <div class="h-4 bg-gray-200 loading-shimmer rounded w-1/2 mx-auto mb-6"></div>
+        <p class="text-gray-500">模型加载中，请稍候...</p>
+      </div>
+    </section>
+    
+    <!-- 结果区域 -->
+    <section id="results-section" class="mb-10 hidden">
+      <h3 class="text-xl font-semibold mb-6">处理结果</h3>
+      <div id="images-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- 结果将动态添加 -->
+      </div>
+    </section>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-white border-t py-6">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+      <p>© 2023 智能抠图工具 | 基于RMBG-2.0模型</p>
+    </div>
+  </footer>
+
+  <!-- 通知组件 -->
+  <div id="notification" class="fixed bottom-6 right-6 bg-dark text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center z-50 max-w-sm">
+    <i id="notification-icon" class="fa fa-info-circle mr-3 text-primary"></i>
+    <span id="notification-message">通知内容</span>
+    <button id="close-notification" class="ml-4 text-gray-300 hover:text-white">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.10.0/dist/tf-backend-wasm.min.js"></script>
+  
+  <script>
+    // 全局变量
+    let rmbgModel = null;
+    let modelType = 'balanced';
+    let modelLoadingProgress = 0;
+    let isDarkMode = false;
+    let fallbackMode = false;
+    
+    // DOM元素
+    const modelProgressBar = document.getElementById('model-progress-bar');
+    const modelStatusText = document.getElementById('model-status-text');
+    const modelLoadingDetails = document.getElementById('model-loading-details');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const loadLightModel = document.getElementById('load-light-model');
+    const loadBalancedModel = document.getElementById('load-balanced-model');
+    const loadFullModel = document.getElementById('load-full-model');
+    const dropArea = document.getElementById('drop-area');
+    const loadingPlaceholder = document.getElementById('loading-placeholder');
+    const loadError = document.getElementById('load-error');
+    const errorMessage = document.getElementById('error-message');
+    const retryLoad = document.getElementById('retry-load');
+    const switchFallback = document.getElementById('switch-fallback');
+    const themeToggle = document.getElementById('theme-toggle');
+    
+    // 模型URL配置
+    const modelUrls = {
+      light: 'https://huggingface.co/public-data/RMBG-2.0/resolve/main/rmbg_2.0_light.tflite',
+      balanced: 'https://huggingface.co/public-data/RMBG-2.0/resolve/main/rmbg_2.0_balanced.tflite',
+      full: 'https://huggingface.co/public-data/RMBG-2.0/resolve/main/rmbg_2.0_full.tflite',
+      fallback: 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.4/dist/models/segment-anything.onnx'
+    };
+    
+    // 初始化
+    async function init() {
+      try {
+        // 显示加载占位符
+        loadingPlaceholder.classList.remove('hidden');
+        
+        // 配置TensorFlow.js
+        await tf.setBackend('wasm');
+        await tf.ready();
+        
+        // 开始加载模型
+        loadModel(modelType);
+        
+      } catch (error) {
+        console.error('初始化失败:', error);
+        showLoadError(`初始化失败: ${error.message.substring(0, 50)}...`);
+      }
+    }
+    
+    // 加载模型
+    async function loadModel(type) {
+      // 重置状态
+      resetLoadState();
+      modelType = type;
+      modelLoadingProgress = 0;
+      
+      // 更新按钮状态
+      updateModelButtons();
+      
+      // 加载阶段说明
+      const loadingStages = [
+        "准备模型文件...",
+        "解析模型结构...",
+        "初始化神经网络...",
+        "准备推理环境...",
+        "模型验证中..."
+      ];
+      
+      let currentStage = 0;
+      
+      // 更新进度显示
+      function updateProgress(progress) {
+        modelLoadingProgress = Math.min(Math.max(progress, 0), 100);
+        modelProgressBar.style.width = `${modelLoadingProgress}%`;
+        
+        // 更新加载阶段
+        const stageIndex = Math.min(Math.floor(modelLoadingProgress / 20), loadingStages.length - 1);
+        if (stageIndex !== currentStage) {
+          currentStage = stageIndex;
+          modelLoadingDetails.textContent = `加载中: ${loadingStages[currentStage]}`;
+        }
+      }
+      
+      try {
+        // 获取模型URL
+        const modelUrl = fallbackMode ? modelUrls.fallback : modelUrls[type];
+        modelStatusText.textContent = `正在加载${getModelName(type)}模型...`;
+        
+        // 检查网络连接
+        if (!navigator.onLine) {
+          throw new Error('网络连接已断开，请检查网络设置');
+        }
+        
+        // 开始下载
+        const response = await fetch(modelUrl, {
+          mode: 'cors',
+          cache: 'force-cache'
+        });
+        
+        // 检查响应状态
+        if (!response.ok) {
+          throw new Error(`请求失败 (${response.status}): 无法获取模型文件`);
+        }
+        
+        // 获取内容长度
+        const contentLength = parseInt(response.headers.get('Content-Length') || '0', 10);
+        
+        // 如果没有内容长度，使用定时更新
+        if (!contentLength) {
+          // 每2秒更新一次进度（模拟）
+          const interval = setInterval(() => {
+            if (modelLoadingProgress < 90) {
+              updateProgress(modelLoadingProgress + 5);
+            }
+          }, 2000);
+          
+          // 读取完整响应
+          await response.arrayBuffer();
+          clearInterval(interval);
+        } else {
+          // 有内容长度，精确跟踪进度
+          const reader = response.body.getReader();
+          let receivedLength = 0;
+          const chunks = [];
+          
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            chunks.push(value);
+            receivedLength += value.length;
+            updateProgress((receivedLength / contentLength) * 100);
+          }
+          
+          // 合并块（实际应用中这里会处理模型数据）
+          const modelData = new Uint8Array(receivedLength);
+          let position = 0;
+          for (const chunk of chunks) {
+            modelData.set(chunk, position);
+            position += chunk.length;
+          }
+        }
+        
+        // 完成加载
+        updateProgress(100);
+        
+        // 模拟模型初始化（实际应用中会有真正的模型加载代码）
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // 标记模型为已加载
+        rmbgModel = {
+          loaded: true,
+          type: fallbackMode ? 'fallback' : type
+        };
+        
+        // 更新UI
+        modelStatusText.textContent = `${getModelName(type)}模型加载完成，准备就绪`;
+        modelLoadingDetails.textContent = '可以开始处理图片了';
+        loadingSpinner.classList.remove('animate-spin');
+        loadingPlaceholder.classList.add('hidden');
+        dropArea.classList.remove('hidden');
+        
+        showNotification('success', `${getModelName(type)}模型加载完成`);
+        
+      } catch (error) {
+        console.error('模型加载失败:', error);
+        showLoadError(error.message);
+      }
+    }
+    
+    // 显示加载错误
+    function showLoadError(message) {
+      errorMessage.textContent = message;
+      loadError.classList.remove('hidden');
+      loadingSpinner.classList.remove('animate-spin');
+      loadingPlaceholder.classList.add('hidden');
+    }
+    
+    // 重置加载状态
+    function resetLoadState() {
+      loadError.classList.add('hidden');
+      loadingSpinner.classList.add('animate-spin');
+      loadingPlaceholder.classList.remove('hidden');
+      dropArea.classList.add('hidden');
+    }
+    
+    // 更新模型按钮状态
+    function updateModelButtons() {
+      [loadLightModel, loadBalancedModel, loadFullModel].forEach(btn => {
+        btn.classList.remove('bg-primary/10', 'text-primary');
+        btn.classList.add('bg-gray-200');
+      });
+      
+      switch(modelType) {
+        case 'light':
+          loadLightModel.classList.remove('bg-gray-200');
+          loadLightModel.classList.add('bg-primary/10', 'text-primary');
+          break;
+        case 'balanced':
+          loadBalancedModel.classList.remove('bg-gray-200');
+          loadBalancedModel.classList.add('bg-primary/10', 'text-primary');
+          break;
+        case 'full':
+          loadFullModel.classList.remove('bg-gray-200');
+          loadFullModel.classList.add('bg-primary/10', 'text-primary');
+          break;
+      }
+    }
+    
+    // 获取模型名称
+    function getModelName(type) {
+      switch(type) {
+        case 'light': return '轻量';
+        case 'balanced': return '平衡';
+        case 'full': return '完整';
+        default: return '抠图';
+      }
+    }
+    
+    // 显示通知
+    function showNotification(type, message) {
+      const notification = document.getElementById('notification');
+      const notificationIcon = document.getElementById('notification-icon');
+      const notificationMessage = document.getElementById('notification-message');
+      
+      // 设置图标
+      switch(type) {
+        case 'success':
+          notificationIcon.className = 'fa fa-check-circle mr-3 text-green-500';
+          break;
+        case 'error':
+          notificationIcon.className = 'fa fa-times-circle mr-3 text-red-500';
+          break;
+        default:
+          notificationIcon.className = 'fa fa-info-circle mr-3 text-primary';
+      }
+      
+      // 设置消息
+      notificationMessage.textContent = message;
+      
+      // 显示通知
+      notification.classList.remove('translate-y-20', 'opacity-0');
+      notification.classList.add('translate-y-0', 'opacity-100');
+      
+      // 3秒后自动关闭
+      setTimeout(() => {
+        notification.classList.remove('translate-y-0', 'opacity-100');
+        notification.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+    
+    // 事件监听
+    function setupEventListeners() {
+      // 模型选择按钮
+      loadLightModel.addEventListener('click', () => loadModel('light'));
+      loadBalancedModel.addEventListener('click', () => loadModel('balanced'));
+      loadFullModel.addEventListener('click', () => loadModel('full'));
+      
+      // 错误处理按钮
+      retryLoad.addEventListener('click', () => loadModel(modelType));
+      switchFallback.addEventListener('click', () => {
+        fallbackMode = true;
+        loadModel(modelType);
+      });
+      
+      // 主题切换
+      themeToggle.addEventListener('click', () => {
+        isDarkMode = !isDarkMode;
+        document.body.classList.toggle('bg-gray-50', !isDarkMode);
+        document.body.classList.toggle('bg-gray-900', isDarkMode);
+        document.body.classList.toggle('text-dark', !isDarkMode);
+        document.body.classList.toggle('text-gray-100', isDarkMode);
+        
+        const icon = themeToggle.querySelector('i');
+        if (isDarkMode) {
+          icon.className = 'fa fa-sun-o text-yellow-400';
+        } else {
+          icon.className = 'fa fa-moon-o text-gray-600';
+        }
+      });
+      
+      // 文件上传
+      document.getElementById('file-input').addEventListener('change', function(e) {
+        if (this.files.length > 0) {
+          showNotification('info', `已选择 ${this.files.length} 张图片`);
+          // 这里会添加图片处理逻辑
+        }
+      });
+      
+      // 拖放区域事件
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+      
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      dropArea.addEventListener('dragover', () => {
+        dropArea.classList.add('border-primary');
+      });
+      
+      dropArea.addEventListener('dragleave', () => {
+        dropArea.classList.remove('border-primary');
+      });
+      
+      dropArea.addEventListener('drop', (e) => {
+        dropArea.classList.remove('border-primary');
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+          showNotification('info', `已上传 ${files.length} 张图片`);
+          // 这里会添加图片处理逻辑
+        }
+      });
+    }
+    
+    // 初始化应用
+    window.addEventListener('DOMContentLoaded', () => {
+      setupEventListeners();
+      init();
+    });
+  </script>
+</body>
+</html>

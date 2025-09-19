@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ONNX WASM模型抠图工具</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3B82F6',
+            secondary: '#10B981',
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .progress-bar {
+        height: 4px;
+        background: linear-gradient(90deg, #3B82F6 0%, #10B981 100%);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white shadow-sm py-4">
+    <div class="container mx-auto px-4">
+      <h1 class="text-xl font-bold text-gray-800">ONNX WASM模型抠图工具</h1>
+      <p class="text-sm text-gray-500">支持ort-wasm-simd-threaded.jsep.wasm模型</p>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-8">
+    <!-- 模型加载区域 -->
+    <section id="model-loader" class="bg-white rounded-xl shadow-sm p-6 mb-8">
+      <h3 class="text-lg font-semibold mb-4">加载本地模型</h3>
+      
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          选择ort-wasm-simd-threaded.jsep.wasm文件
+        </label>
+        <input type="file" id="wasm-model" accept=".wasm" class="block w-full text-sm text-gray-500
+          file:mr-4 file:py-2 file:px-4
+          file:rounded-lg file:border-0
+          file:text-sm file:font-medium
+          file:bg-primary file:text-white
+          hover:file:bg-primary/90">
+      </div>
+      
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          选择模型配置文件(.json)
+        </label>
+        <input type="file" id="model-config" accept=".json" class="block w-full text-sm text-gray-500
+          file:mr-4 file:py-2 file:px-4
+          file:rounded-lg file:border-0
+          file:text-sm file:font-medium
+          file:bg-primary file:text-white
+          hover:file:bg-primary/90">
+      </div>
+      
+      <div class="w-full bg-gray-200 rounded-full h-2 mb-2 hidden" id="model-progress-container">
+        <div class="progress-bar" id="model-progress"></div>
+      </div>
+      
+      <div id="model-status" class="text-sm text-gray-500">
+        请选择WASM模型文件和配置文件
+      </div>
+      
+      <button id="load-model-btn" class="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        <i class="fa fa-play mr-2"></i>加载模型
+      </button>
+    </section>
+    
+    <!-- 图片上传区域 -->
+    <section id="image-upload" class="bg-white rounded-xl shadow-sm p-6 mb-8 hidden">
+      <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-colors hover:border-primary" id="image-drop-area">
+        <i class="fa fa-image text-5xl text-gray-400 mb-4"></i>
+        <h3 class="text-xl font-semibold mb-2">拖放图片到此处</h3>
+        <p class="text-gray-500 mb-6">支持JPG、PNG格式图片</p>
+        
+        <label class="inline-block bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg cursor-pointer transition-all">
+          <i class="fa fa-upload mr-2"></i>选择图片
+          <input type="file" id="image-input" accept="image/*" class="hidden">
+        </label>
+      </div>
+    </section>
+    
+    <!-- 处理区域 -->
+    <section id="processing-area" class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 hidden">
+      <div class="bg-white rounded-xl shadow-sm p-4">
+        <h3 class="text-center font-medium mb-2">原图</h3>
+        <div class="flex justify-center">
+          <img id="input-image" class="max-w-full max-h-[400px] object-contain" alt="原始图片">
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-sm p-4">
+        <h3 class="text-center font-medium mb-2">抠图结果</h3>
+        <div class="flex justify-center">
+          <canvas id="output-canvas" class="max-w-full max-h-[400px] object-contain bg-gray-100"></canvas>
+        </div>
+        <div class="mt-4 text-center">
+          <button id="process-btn" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors mr-2">
+            <i class="fa fa-cog mr-2"></i>处理图片
+          </button>
+          <button id="save-btn" class="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/90 transition-colors">
+            <i class="fa fa-download mr-2"></i>保存结果
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 引入ONNX Runtime Web -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.3/dist/ort.min.js"></script>
+  
+  <script>
+    // DOM元素
+    const wasmModelInput = document.getElementById('wasm-model');
+    const modelConfigInput = document.getElementById('model-config');
+    const loadModelBtn = document.getElementById('load-model-btn');
+    const modelProgressContainer = document.getElementById('model-progress-container');
+    const modelProgress = document.getElementById('model-progress');
+    const modelStatus = document.getElementById('model-status');
+    const imageUploadSection = document.getElementById('image-upload');
+    const imageDropArea = document.getElementById('image-drop-area');
+    const imageInput = document.getElementById('image-input');
+    const processingArea = document.getElementById('processing-area');
+    const inputImage = document.getElementById('input-image');
+    const outputCanvas = document.getElementById('output-canvas');
+    const processBtn = document.getElementById('process-btn');
+    const saveBtn = document.getElementById('save-btn');
+    
+    // 全局变量
+    let wasmFile = null;
+    let configFile = null;
+    let session = null;
+    let currentImage = null;
+    const ctx = outputCanvas.getContext('2d');
+    
+    // 初始化事件监听
+    function initEvents() {
+      // 模型文件选择
+      wasmModelInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          wasmFile = e.target.files[0];
+          checkFilesReady();
+        }
+      });
+      
+      modelConfigInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          configFile = e.target.files[0];
+          checkFilesReady();
+        }
+      });
+      
+      // 加载模型按钮
+      loadModelBtn.addEventListener('click', loadModel);
+      
+      // 图片上传事件
+      imageInput.addEventListener('change', handleImageSelect);
+      
+      // 拖放事件
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        imageDropArea.addEventListener(eventName, preventDefaults, false);
+      });
+      
+      imageDropArea.addEventListener('dragover', () => {
+        imageDropArea.classList.add('border-primary', 'bg-primary/5');
+      });
+      
+      imageDropArea.addEventListener('dragleave', () => {
+        imageDropArea.classList.remove('border-primary', 'bg-primary/5');
+      });
+      
+      imageDropArea.addEventListener('drop', (e) => {
+        imageDropArea.classList.remove('border-primary', 'bg-primary/5');
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+          handleImageFile(files[0]);
+        }
+      });
+      
+      // 处理按钮
+      processBtn.addEventListener('click', processImage);
+      saveBtn.addEventListener('click', saveResult);
+    }
+    
+    // 检查文件是否准备就绪
+    function checkFilesReady() {
+      if (wasmFile && configFile) {
+        loadModelBtn.disabled = false;
+        modelStatus.textContent = `已选择: ${wasmFile.name} 和 ${configFile.name}`;
+      } else if (wasmFile) {
+        modelStatus.textContent = `已选择WASM文件: ${wasmFile.name}，请选择配置文件`;
+      } else if (configFile) {
+        modelStatus.textContent = `已选择配置文件: ${configFile.name}，请选择WASM文件`;
+      }
+    }
+    
+    // 阻止默认拖放行为
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // 加载模型
+    async function loadModel() {
+      if (!wasmFile || !configFile) return;
+      
+      try {
+        // 显示进度条
+        modelProgressContainer.classList.remove('hidden');
+        modelStatus.textContent = '正在解析模型配置...';
+        updateProgress(10);
+        
+        // 读取配置文件
+        const configReader = new FileReader();
+        const config = await new Promise((resolve) => {
+          configReader.onload = (e) => {
+            resolve(JSON.parse(e.target.result));
+          };
+          configReader.readAsText(configFile);
+        });
+        
+        updateProgress(30);
+        modelStatus.textContent = '正在初始化ONNX Runtime...';
+        
+        // 设置WASM路径
+        ort.env.wasm.wasmPaths = {
+          'ort-wasm-simd-threaded.jsep.wasm': URL.createObjectURL(wasmFile)
+        };
+        
+        // 配置ONNX Runtime
+        const sessionOptions = {
+          executionProviders: ['wasm'],
+          graphOptimizationLevel: 'all'
+        };
+        
+        updateProgress(50);
+        modelStatus.textContent = '正在加载模型...';
+        
+        // 创建模型会话（这里使用配置创建一个简单的会话示例）
+        // 实际实现可能需要根据您的模型格式进行调整
+        session = await ort.InferenceSession.create(
+          config, 
+          sessionOptions
+        );
+        
+        updateProgress(100);
+        modelStatus.textContent = '模型加载成功，准备就绪';
+        
+        // 显示图片上传区域
+        imageUploadSection.classList.remove('hidden');
+        
+      } catch (error) {
+        console.error('模型加载错误:', error);
+        modelStatus.textContent = `加载失败: ${error.message.substring(0, 50)}...`;
+      }
+    }
+    
+    // 更新进度
+    function updateProgress(percent) {
+      modelProgress.style.width = `${percent}%`;
+    }
+    
+    // 处理图片选择
+    function handleImageSelect(e) {
+      if (e.target.files.length > 0) {
+        handleImageFile(e.target.files[0]);
+      }
+    }
+    
+    // 处理图片文件
+    function handleImageFile(file) {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          currentImage = img;
+          displayImage(img);
+        };
+        img.src = e.target.result;
+      };
+      
+      reader.readAsDataURL(file);
+    }
+    
+    // 显示图片
+    function displayImage(img) {
+      // 显示原图
+      inputImage.src = img.src;
+      
+      // 初始化画布
+      outputCanvas.width = img.width;
+      outputCanvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      // 显示处理区域
+      processingArea.classList.remove('hidden');
+    }
+    
+    // 处理图片
+    async function processImage() {
+      if (!session || !currentImage) return;
+      
+      try {
+        processBtn.disabled = true;
+        processBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>处理中...';
+        modelStatus.textContent = '正在处理图片...';
+        
+        // 准备输入数据
+        const preprocessedData = preprocessImage(currentImage);
+        
+        // 创建输入张量
+        const inputTensor = new ort.Tensor('float32', preprocessedData.data, preprocessedData.shape);
+        const inputs = { input: inputTensor };
+        
+        // 运行模型推理
+        const results = await session.run(inputs);
+        
+        // 处理输出结果
+        const mask = results.output.data;
+        postprocessResult(currentImage, mask);
+        
+        modelStatus.textContent = '图片处理完成';
+        
+      } catch (error) {
+        console.error('图片处理错误:', error);
+        modelStatus.textContent = `处理失败: ${error.message.substring(0, 50)}...`;
+      } finally {
+        processBtn.disabled = false;
+        processBtn.innerHTML = '<i class="fa fa-cog mr-2"></i>处理图片';
+      }
+    }
+    
+    // 预处理图片
+    function preprocessImage(img) {
+      // 创建临时画布进行预处理
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 调整图片大小（根据模型要求）
+      const targetSize = 512;
+      canvas.width = targetSize;
+      canvas.height = targetSize;
+      
+      // 绘制并获取像素数据
+      ctx.drawImage(img, 0, 0, targetSize, targetSize);
+      const imageData = ctx.getImageData(0, 0, targetSize, targetSize);
+      const data = imageData.data;
+      
+      // 转换为模型需要的格式 (RGB -> 标准化浮点数)
+      const inputData = new Float32Array(targetSize * targetSize * 3);
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const index = (i / 4) * 3;
+        // 标准化到[-1, 1]范围（根据模型要求调整）
+        inputData[index] = (data[i] / 255 - 0.5) * 2;     // R
+        inputData[index + 1] = (data[i + 1] / 255 - 0.5) * 2; // G
+        inputData[index + 2] = (data[i + 2] / 255 - 0.5) * 2; // B
+      }
+      
+      return {
+        data: inputData,
+        shape: [1, 3, targetSize, targetSize]
+      };
+    }
+    
+    // 后处理结果
+    function postprocessResult(originalImg, maskData) {
+      // 清除画布
+      ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+      
+      // 绘制原图
+      ctx.drawImage(originalImg, 0, 0);
+      
+      // 创建遮罩画布
+      const maskCanvas = document.createElement('canvas');
+      const maskCtx = maskCanvas.getContext('2d');
+      
+      const targetSize = 512;
+      maskCanvas.width = targetSize;
+      maskCanvas.height = targetSize;
+      
+      // 创建遮罩图像数据
+      const maskImageData = maskCtx.createImageData(targetSize, targetSize);
+      
+      // 将模型输出转换为图像数据
+      for (let i = 0; i < maskData.length; i++) {
+        const index = i * 4;
+        // 阈值处理 - 根据模型输出调整阈值
+        const value = maskData[i] > 0.5 ? 255 : 0;
+        
+        maskImageData.data[index] = 0;     // R
+        maskImageData.data[index + 1] = 0; // G
+        maskImageData.data[index + 2] = 0; // B
+        maskImageData.data[index + 3] = value; // Alpha
+      }
+      
+      maskCtx.putImageData(maskImageData, 0, 0);
+      
+      // 创建临时画布用于合成
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCanvas.width = originalImg.width;
+      tempCanvas.height = originalImg.height;
+      
+      // 先绘制遮罩（放大到原图尺寸）
+      tempCtx.drawImage(maskCanvas, 0, 0, originalImg.width, originalImg.height);
+      
+      // 设置合成模式
+      tempCtx.globalCompositeOperation = 'source-in';
+      
+      // 绘制原图
+      tempCtx.drawImage(originalImg, 0, 0);
+      
+      // 将结果绘制到输出画布
+      ctx.drawImage(tempCanvas, 0, 0);
+    }
+    
+    // 保存结果
+    function saveResult() {
+      try {
+        const link = document.createElement('a');
+        link.download = '抠图结果.png';
+        link.href = outputCanvas.toDataURL('image/png');
+        link.click();
+        modelStatus.textContent = '结果已保存';
+      } catch (error) {
+        console.error('保存错误:', error);
+        modelStatus.textContent = '保存失败，请重试';
+      }
+    }
+    
+    // 初始化应用
+    window.addEventListener('DOMContentLoaded', initEvents);
+  </script>
+</body>
+</html>

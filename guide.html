@@ -1,0 +1,480 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>使用指南 - 鲁虺抠图宝(luhuiCuttyPic) | AI智能抠图工具教程</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="description" content="鲁虺抠图宝(luhuiCuttyPic)使用指南 - 详细介绍如何使用AI智能抠图工具，包括批量处理图片、更换底色背景、WebGPU加速等功能说明，以及常见问题解答和使用技巧。" />
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.ico">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#ec4899">
+
+    <meta name="keywords" content="抠图宝教程,CuttyPic指南,AI抠图教程,智能抠图使用说明,在线抠图教程,证件照换底色教程,批量抠图指南,WebGPU加速说明" />
+    <meta name="author" content="抠图宝" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="http://cuttypic.luhui.net/guide.html" />
+    <meta property="og:title" content="使用指南 - 鲁虺抠图宝(luhuiCuttyPic) | AI智能抠图工具教程" />
+    <meta property="og:description" content="详细介绍如何使用AI智能抠图工具，包括批量处理图片、更换底色背景、WebGPU加速等功能说明，以及常见问题解答和使用技巧。" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="http://cuttypic.luhui.net/guide.html" />
+    <meta property="twitter:title" content="使用指南 - 鲁虺抠图宝(luhuiCuttyPic) | AI智能抠图工具教程" />
+    <meta property="twitter:description" content="详细介绍如何使用AI智能抠图工具，包括批量处理图片、更换底色背景、WebGPU加速等功能说明，以及常见问题解答和使用技巧。" />
+    <meta property="twitter:image" content="/og-image.png" />
+
+    <!-- 其他 SEO 相关标签 -->
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="application-name" content="抠图宝" />
+    <meta name="apple-mobile-web-app-title" content="抠图宝" />
+    <link rel="canonical" href="http://cuttypic.luhui.net/guide.html" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Tailwind CSS -->
+    <script src="http://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .gradient-bg {
+        background: linear-gradient(to bottom right, #fdf2f8, #ede9fe);
+      }
+      .step-item {
+        position: relative;
+        padding-left: 3rem;
+      }
+      .step-number {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 9999px;
+        background: linear-gradient(to right, #ec4899, #8b5cf6);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body class="gradient-bg min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <a href="/" class="flex items-center gap-2 hover:opacity-90 transition-opacity">
+                <img src="/favicon.ico" alt="抠图宝" class="w-8 h-8" />
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+                  抠图宝
+                </h1>
+              </a>
+            </div>
+            <div class="hidden md:block">
+              <div class="ml-10 flex items-center space-x-4">
+                <a href="/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-pink-500 transition-colors">
+                  <i class="fas fa-home mr-1"></i> 首页
+                </a>
+                <a href="/guide.html" class="px-3 py-2 rounded-md text-sm font-medium text-pink-500">
+                  <i class="fas fa-book mr-1"></i> 使用指南
+                </a>
+                <a href="/about.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-pink-500 transition-colors">
+                  <i class="fas fa-info-circle mr-1"></i> 关于我们
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+      <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+        <div class="p-6 border-b border-gray-200">
+          <h1 class="text-3xl font-bold text-gray-800 mb-2">使用指南</h1>
+          <p class="text-gray-600">了解如何使用抠图宝智能抠图工具，轻松去除图片背景</p>
+        </div>
+        
+        <!-- 目录导航 -->
+        <div class="bg-gray-50 p-4 border-b border-gray-200">
+          <div class="max-w-3xl mx-auto">
+            <h2 class="text-sm font-medium text-gray-500 mb-3">目录</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <a href="#intro" class="text-pink-600 hover:text-pink-700 flex items-center">
+                <i class="fas fa-circle-info text-xs mr-2"></i> 产品介绍
+              </a>
+              <a href="#workflow" class="text-pink-600 hover:text-pink-700 flex items-center">
+                <i class="fas fa-list-ol text-xs mr-2"></i> 基本使用流程
+              </a>
+              <a href="#tips" class="text-pink-600 hover:text-pink-700 flex items-center">
+                <i class="fas fa-lightbulb text-xs mr-2"></i> 使用技巧
+              </a>
+              <a href="#faq" class="text-pink-600 hover:text-pink-700 flex items-center">
+                <i class="fas fa-circle-question text-xs mr-2"></i> 常见问题解答
+              </a>
+              <a href="#help" class="text-pink-600 hover:text-pink-700 flex items-center">
+                <i class="fas fa-headset text-xs mr-2"></i> 需要更多帮助？
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 产品介绍 -->
+        <div id="intro" class="p-6 border-b border-gray-200">
+          <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <i class="fas fa-circle-info text-pink-500 mr-3"></i> 产品介绍
+            </h2>
+            <div class="space-y-4 text-gray-700">
+              <p>抠图宝是一款基于人工智能技术的在线图像背景去除工具，专为需要快速、高质量抠图的用户设计。无论您是电商卖家需要制作产品图，还是普通用户想要制作证件照或美化照片，抠图宝都能满足您的需求。</p>
+              
+              <div class="bg-pink-50 rounded-lg p-4 border border-pink-100">
+                <h3 class="font-semibold text-gray-800 mb-2">抠图宝的核心特点：</h3>
+                <ul class="list-disc pl-5 space-y-1">
+                  <li><span class="font-medium">完全免费</span>：无需付费，无需注册，无水印</li>
+                  <li><span class="font-medium">本地处理</span>：所有图片在您的设备上处理，保护隐私</li>
+                  <li><span class="font-medium">智能识别</span>：先进的AI模型，精准识别前景和背景</li>
+                  <li><span class="font-medium">简单易用</span>：拖放上传，一键抠图，快速导出</li>
+                  <li><span class="font-medium">多种编辑</span>：支持背景替换、颜色调整等功能</li>
+                  <li><span class="font-medium">批量处理</span>：支持多图同时处理，提高效率</li>
+                </ul>
+              </div>
+              
+              <p>抠图宝使用两种不同的AI模型来处理图像：</p>
+              <ul class="list-disc pl-5 space-y-1">
+                <li><span class="font-medium">RMBG-1.4</span>：通用模型，适用于所有浏览器和设备</li>
+                <li><span class="font-medium">MODNet</span>：WebGPU加速模型，在支持WebGPU的浏览器中提供更快的处理速度</li>
+              </ul>
+              
+              <p>系统会根据您的设备和浏览器自动选择最合适的模型，确保最佳的使用体验。</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 基本使用流程 -->
+        <div id="workflow" class="p-6 border-b border-gray-200">
+          <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <i class="fas fa-list-ol text-pink-500 mr-3"></i> 基本使用流程
+            </h2>
+            <div class="space-y-6 text-gray-700">
+              <div class="step-item">
+                <div class="step-number">1</div>
+                <h3 class="text-xl font-semibold mb-2">上传图片</h3>
+                <p class="mb-2">有三种方式可以上传图片：</p>
+                <ul class="list-disc pl-5 space-y-1 mb-3">
+                  <li>将图片拖放到上传区域</li>
+                  <li>点击"选择文件"按钮从设备中选择图片</li>
+                  <li>直接从其他应用复制图片，然后在网页中粘贴(Ctrl+V或Command+V)</li>
+                </ul>
+                <p class="text-sm text-gray-500">支持的格式：JPG、PNG、JPEG等常见图片格式</p>
+              </div>
+              
+              <div class="step-item">
+                <div class="step-number">2</div>
+                <h3 class="text-xl font-semibold mb-2">等待处理</h3>
+                <p class="mb-2">上传后，抠图宝会自动开始处理您的图片：</p>
+                <ul class="list-disc pl-5 space-y-1 mb-3">
+                  <li>首次使用时，系统需要下载AI模型，可能需要几秒钟时间</li>
+                  <li>处理过程中，您会看到进度提示</li>
+                  <li>处理时间取决于图片大小和您设备的性能</li>
+                </ul>
+                <div class="bg-yellow-50 p-3 rounded-md border border-yellow-100">
+                  <p class="text-sm flex items-start">
+                    <i class="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                    <span>首次处理可能需要较长时间，因为系统需要加载AI模型。后续处理会更快。</span>
+                  </p>
+                </div>
+              </div>
+              
+              <div class="step-item">
+                <div class="step-number">3</div>
+                <h3 class="text-xl font-semibold mb-2">查看和编辑结果</h3>
+                <p class="mb-2">处理完成后，您可以：</p>
+                <ul class="list-disc pl-5 space-y-1 mb-3">
+                  <li>查看抠图结果，透明背景会以棋盘格显示</li>
+                  <li>点击"编辑"按钮进行进一步调整：
+                    <ul class="list-circle pl-5 mt-1">
+                      <li>更换背景颜色</li>
+                      <li>添加纹理背景</li>
+                      <li>使用自定义图片作为背景</li>
+                      <li>调整亮度、对比度等效果</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              
+              <div class="step-item">
+                <div class="step-number">4</div>
+                <h3 class="text-xl font-semibold mb-2">下载结果</h3>
+                <p class="mb-2">满意后，您可以：</p>
+                <ul class="list-disc pl-5 space-y-1 mb-3">
+                  <li>点击"下载"按钮保存单张处理后的图片</li>
+                  <li>如果处理了多张图片，可以点击"下载全部"一次性获取所有结果</li>
+                </ul>
+                <p class="text-sm text-gray-500">下载的图片为PNG格式，保留透明背景</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 使用技巧 -->
+        <div id="tips" class="p-6 border-b border-gray-200">
+          <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <i class="fas fa-lightbulb text-pink-500 mr-3"></i> 使用技巧
+            </h2>
+            <div class="space-y-4 text-gray-700">
+              <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                  <i class="fas fa-image text-blue-500 mr-2"></i> 获得最佳抠图效果
+                </h3>
+                <ul class="list-disc pl-5 space-y-1">
+                  <li>使用清晰、对比度良好的图片</li>
+                  <li>确保主体与背景有明显区别</li>
+                  <li>避免使用过于复杂或杂乱的背景</li>
+                  <li>光线充足的图片通常效果更好</li>
+                </ul>
+              </div>
+              
+              <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                  <i class="fas fa-bolt text-green-500 mr-2"></i> 提高处理速度
+                </h3>
+                <ul class="list-disc pl-5 space-y-1">
+                  <li>如果您的浏览器支持WebGPU，选择MODNet模型可获得更快的处理速度</li>
+                  <li>处理前压缩大图片可以加快速度</li>
+                  <li>关闭其他占用资源的标签页或应用</li>
+                  <li>使用性能较好的设备和最新版本的浏览器</li>
+                </ul>
+              </div>
+              
+              <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                  <i class="fas fa-wand-magic-sparkles text-purple-500 mr-2"></i> 编辑功能技巧
+                </h3>
+                <ul class="list-disc pl-5 space-y-1">
+                  <li>制作证件照时，选择纯色背景并使用标准尺寸（如一寸、二寸）</li>
+                  <li>电商产品图片推荐使用白色背景，提高专业感</li>
+                  <li>社交媒体图片可以尝试渐变或图片背景，增加吸引力</li>
+                  <li>调整亮度和对比度可以进一步提升图片质量</li>
+                </ul>
+              </div>
+              
+              <div class="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                  <i class="fas fa-keyboard text-orange-500 mr-2"></i> 快捷操作
+                </h3>
+                <ul class="list-disc pl-5 space-y-1">
+                  <li>使用Ctrl+V（Windows）或Command+V（Mac）直接粘贴剪贴板中的图片</li>
+                  <li>批量处理时，可以一次性拖放多张图片</li>
+                  <li>使用示例图片快速体验功能</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 常见问题解答 -->
+        <div id="faq" class="p-6 border-b border-gray-200">
+          <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <i class="fas fa-circle-question text-pink-500 mr-3"></i> 常见问题解答
+            </h2>
+            <div class="space-y-4 text-gray-700">
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="w-full text-left p-4 bg-gray-50 font-medium text-gray-800 flex justify-between items-center">
+                  <span>抠图宝是免费的吗？有使用限制吗？</span>
+                  <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="p-4 bg-white">
+                  <p>是的，抠图宝完全免费，没有水印，也没有使用次数限制。您可以无限制地使用所有功能，无需注册账号或付费。</p>
+                </div>
+              </div>
+              
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="w-full text-left p-4 bg-gray-50 font-medium text-gray-800 flex justify-between items-center">
+                  <span>我的图片会上传到服务器吗？隐私安全吗？</span>
+                  <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="p-4 bg-white">
+                  <p>抠图宝的所有处理都在您的浏览器中本地完成，您的图片不会上传到我们的服务器。AI模型直接在您的设备上运行，确保您的隐私安全。</p>
+                </div>
+              </div>
+              
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="w-full text-left p-4 bg-gray-50 font-medium text-gray-800 flex justify-between items-center">
+                  <span>为什么处理图片需要这么长时间？</span>
+                  <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="p-4 bg-white">
+                  <p>处理时间取决于多个因素：</p>
+                  <ul class="list-disc pl-5 mt-2 space-y-1">
+                    <li>首次使用时，需要下载AI模型（约10-20MB），这可能需要一些时间</li>
+                    <li>图片大小和复杂度会影响处理速度</li>
+                    <li>您设备的性能和浏览器类型也会影响速度</li>
+                    <li>如果您的浏览器支持WebGPU，选择MODNet模型可以获得更快的处理速度</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="w-full text-left p-4 bg-gray-50 font-medium text-gray-800 flex justify-between items-center">
+                  <span>抠图效果不理想，如何改善？</span>
+                  <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="p-4 bg-white">
+                  <p>如果抠图效果不理想，您可以尝试以下方法：</p>
+                  <ul class="list-disc pl-5 mt-2 space-y-1">
+                    <li>使用更清晰、对比度更高的图片</li>
+                    <li>确保主体与背景有明显区别</li>
+                    <li>尝试不同的AI模型（如果您的浏览器支持WebGPU，可以切换到MODNet）</li>
+                    <li>对于复杂图片，可能需要使用专业的图像编辑软件进行手动调整</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="w-full text-left p-4 bg-gray-50 font-medium text-gray-800 flex justify-between items-center">
+                  <span>支持哪些图片格式？有大小限制吗？</span>
+                  <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="p-4 bg-white">
+                  <p>抠图宝支持常见的图片格式，包括JPG、PNG、JPEG等。虽然没有严格的大小限制，但我们建议图片不要超过10MB，以确保处理速度和浏览器稳定性。对于特别大的图片，建议先压缩后再上传处理。</p>
+                </div>
+              </div>
+              
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <button class="w-full text-left p-4 bg-gray-50 font-medium text-gray-800 flex justify-between items-center">
+                  <span>为什么我的浏览器不显示WebGPU选项？</span>
+                  <i class="fas fa-chevron-down text-gray-400"></i>
+                </button>
+                <div class="p-4 bg-white">
+                  <p>WebGPU是一项较新的技术，目前只有部分现代浏览器支持。如果您没有看到WebGPU选项，可能是因为：</p>
+                  <ul class="list-disc pl-5 mt-2 space-y-1">
+                    <li>您的浏览器不支持WebGPU（建议使用最新版Chrome或Edge）</li>
+                    <li>您的设备不支持必要的GPU功能</li>
+                    <li>WebGPU功能在您的浏览器中未启用</li>
+                  </ul>
+                  <p class="mt-2">不用担心，即使没有WebGPU，抠图宝仍然可以使用RMBG-1.4模型正常工作。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 需要更多帮助 -->
+        <div id="help" class="p-6">
+          <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <i class="fas fa-headset text-pink-500 mr-3"></i> 需要更多帮助？
+            </h2>
+            <div class="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-6 border border-pink-100">
+              <p class="text-gray-700 mb-4">如果您有任何问题、建议或反馈，欢迎随时联系我们。我们会尽快回复您！</p>
+              <div class="flex items-center">
+                <i class="fas fa-envelope text-pink-500 text-xl mr-3"></i>
+                <a href="http://luhui.net/cn/mail#7704020707180503370318181b18180d5914181a" class="text-pink-600 hover:underline font-medium"><span class="__cf_email__" data-cfemail="365f585059765b575f5a185a435e435f18585342">[email&#160;protected]</span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 页脚部分 -->
+    <footer class="bg-white mt-12 border-t border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <a href="/" class="flex items-center gap-2 mb-4 hover:opacity-90 transition-opacity">
+              <img src="/favicon-small.png" alt="抠图宝" class="w-4 h-4 flex-shrink-0" style="width: '16px', height: '16px'" />
+              <h3 class="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+                抠图宝
+              </h3>
+            </a>
+            <p class="text-gray-500 text-sm">
+              智能一键抠图工具，让创作更简单
+            </p>
+            <div class="flex space-x-4 mt-4">
+              <a href="weixin://dl/chat?kugeceo" class="text-gray-400 hover:text-pink-500 transition-colors" title="微信号: kugeceo">
+                <i class="fab fa-weixin text-xl"></i>
+              </a>
+              <a href="http://weibo.com/kugeceo" target="_blank" class="text-gray-400 hover:text-pink-500 transition-colors">
+                <i class="fab fa-weibo text-xl"></i>
+              </a>
+              <a href="http://github.com/kugeceo" target="_blank" class="text-gray-400 hover:text-pink-500 transition-colors">
+                <i class="fab fa-github text-xl"></i>
+              </a>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800 mb-4">快速链接</h4>
+            <ul class="space-y-2 text-sm">
+              <li><a href="/" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 首页</a></li>
+              <li><a href="/guide.html" class="text-pink-500 flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 使用指南</a></li>
+              <li><a href="/about.html" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 关于我们</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800 mb-4">法律信息</h4>
+            <ul class="space-y-2 text-sm">
+              <li><a href="/privacy.html" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 隐私政策</a></li>
+              <li><a href="/terms.html" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 使用条款</a></li>
+              <li><a href="/copyright.html" class="text-gray-500 hover:text-pink-500 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2 text-pink-300"></i> 版权信息</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800 mb-4">联系我们</h4>
+            <ul class="space-y-2 text-sm">
+              <li class="text-gray-500 flex items-start">
+                <i class="fas fa-envelope mt-1 mr-2 text-pink-400"></i> <a href="http://luhui.net/cn/mail" class="__cf_email__" data-cfemail="365f585059765b575f5a185a435e435f18585342">[email&#160;protected]</a>
+              </li>
+              <li class="text-gray-500 flex items-start">
+                <i class="fas fa-map-marker-alt mt-1 mr-2 text-pink-400"></i> 太阳系地球村大中华东部战区
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="border-t border-gray-200 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
+          <p class="text-sm text-gray-500">
+            Copyright  © 2004-01-11 luhui.net all rights reserved.
+          </p>
+          <div class="flex space-x-4 mt-4 md:mt-0">
+            <a href="/" class="text-gray-500 hover:text-pink-500 transition-colors">首页</a>
+            <a href="/guide.html" class="text-pink-500 font-medium">使用指南</a>
+            <a href="/about.html" class="text-gray-500 hover:text-pink-500 transition-colors">关于我们</a>
+            <a href="/privacy.html" class="text-gray-500 hover:text-pink-500 transition-colors">隐私政策</a>
+            <a href="/terms.html" class="text-gray-500 hover:text-pink-500 transition-colors">使用条款</a>
+            <a href="/copyright.html" class="text-gray-500 hover:text-pink-500 transition-colors">版权信息</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  <!-- Cloudflare Pages Analytics --><script data-cfasync="false" src="/assets/email-decode.min.js"></script><script defer src='/assets/beacon.min.js#' data-cf-beacon='{"token": "d263ce6354a849419f7f4e5ab3278764"}'></script><!-- Cloudflare Pages Analytics --><script defer src="/assets/beacon.min.js#/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"89d3238df51f47f19b854890f713445d","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html> 

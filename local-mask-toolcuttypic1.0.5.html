@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本地图片抠图工具</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#10B981',
+          },
+        },
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white shadow-sm py-4">
+    <div class="container mx-auto px-4">
+      <h1 class="text-xl font-bold text-gray-800">本地图片抠图工具</h1>
+      <p class="text-sm text-gray-500">无需联网加载模型，完全在本地运行</p>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-8">
+    <!-- 上传区域 -->
+    <section class="bg-white rounded-xl shadow-sm p-6 mb-8">
+      <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-colors hover:border-primary">
+        <i class="fa fa-image text-5xl text-gray-400 mb-4"></i>
+        <h3 class="text-xl font-semibold mb-2">拖放图片到此处</h3>
+        <p class="text-gray-500 mb-6">支持JPG、PNG格式图片</p>
+        
+        <label class="inline-block bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg cursor-pointer transition-all">
+          <i class="fa fa-upload mr-2"></i>选择图片
+          <input type="file" id="file-input" accept="image/*" class="hidden">
+        </label>
+      </div>
+    </section>
+    
+    <!-- 控制区域 -->
+    <section id="control-panel" class="bg-white rounded-xl shadow-sm p-6 mb-8 hidden">
+      <h3 class="text-lg font-semibold mb-4">抠图设置</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">颜色阈值</label>
+          <input type="range" id="threshold" min="0" max="255" value="128" 
+                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span>低 (0)</span>
+            <span>高 (255)</span>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">边缘平滑度</label>
+          <input type="range" id="smoothness" min="0" max="20" value="5" 
+                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span>锐利 (0)</span>
+            <span>平滑 (20)</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-6 flex flex-wrap gap-3">
+        <button id="auto-mask-btn" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors">
+          <i class="fa fa-magic mr-2"></i>自动抠图
+        </button>
+        <button id="reset-btn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors">
+          <i class="fa fa-refresh mr-2"></i>重置
+        </button>
+        <button id="download-btn" class="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/90 transition-colors">
+          <i class="fa fa-download mr-2"></i>下载结果
+        </button>
+      </div>
+    </section>
+    
+    <!-- 预览区域 -->
+    <section id="preview-area" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden">
+      <div class="bg-white rounded-xl shadow-sm p-4">
+        <h3 class="text-center font-medium mb-2">原图</h3>
+        <div class="flex justify-center">
+          <img id="original-image" class="max-w-full max-h-[400px] object-contain" alt="原始图片">
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-sm p-4">
+        <h3 class="text-center font-medium mb-2">抠图结果</h3>
+        <div class="flex justify-center">
+          <canvas id="result-canvas" class="max-w-full max-h-[400px] object-contain bg-gray-100"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // DOM元素
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('file-input');
+    const controlPanel = document.getElementById('control-panel');
+    const previewArea = document.getElementById('preview-area');
+    const originalImage = document.getElementById('original-image');
+    const resultCanvas = document.getElementById('result-canvas');
+    const thresholdInput = document.getElementById('threshold');
+    const smoothnessInput = document.getElementById('smoothness');
+    const autoMaskBtn = document.getElementById('auto-mask-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    
+    // 全局变量
+    let currentImage = null;
+    const ctx = resultCanvas.getContext('2d');
+    
+    // 初始化事件监听
+    function initEvents() {
+      // 文件选择
+      fileInput.addEventListener('change', handleFileSelect);
+      
+      // 拖放事件
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+      
+      dropArea.addEventListener('dragover', () => {
+        dropArea.classList.add('border-primary', 'bg-primary/5');
+      });
+      
+      dropArea.addEventListener('dragleave', () => {
+        dropArea.classList.remove('border-primary', 'bg-primary/5');
+      });
+      
+      dropArea.addEventListener('drop', (e) => {
+        dropArea.classList.remove('border-primary', 'bg-primary/5');
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+          handleImageFile(files[0]);
+        }
+      });
+      
+      // 按钮事件
+      autoMaskBtn.addEventListener('click', performAutoMask);
+      resetBtn.addEventListener('click', resetPreview);
+      downloadBtn.addEventListener('click', downloadResult);
+      
+      // 参数变化时实时更新
+      thresholdInput.addEventListener('input', performAutoMask);
+      smoothnessInput.addEventListener('input', performAutoMask);
+    }
+    
+    // 阻止默认拖放行为
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // 处理文件选择
+    function handleFileSelect(e) {
+      if (e.target.files.length > 0) {
+        handleImageFile(e.target.files[0]);
+      }
+    }
+    
+    // 处理图片文件
+    function handleImageFile(file) {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          currentImage = img;
+          displayImage(img);
+        };
+        img.src = e.target.result;
+      };
+      
+      reader.readAsDataURL(file);
+    }
+    
+    // 显示图片
+    function displayImage(img) {
+      // 显示原图
+      originalImage.src = img.src;
+      
+      // 初始化画布
+      resultCanvas.width = img.width;
+      resultCanvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      // 显示控制区和预览区
+      controlPanel.classList.remove('hidden');
+      previewArea.classList.remove('hidden');
+    }
+    
+    // 执行自动抠图（基于颜色阈值的简单抠图算法）
+    function performAutoMask() {
+      if (!currentImage) return;
+      
+      const threshold = parseInt(thresholdInput.value);
+      const smoothness = parseInt(smoothnessInput.value);
+      
+      // 绘制原图到画布
+      ctx.drawImage(currentImage, 0, 0);
+      
+      // 获取图像数据
+      const imageData = ctx.getImageData(0, 0, resultCanvas.width, resultCanvas.height);
+      const data = imageData.data;
+      
+      // 简单的基于亮度的抠图算法（实际应用中可根据需求优化）
+      for (let i = 0; i < data.length; i += 4) {
+        // 计算亮度
+        const brightness = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
+        
+        // 根据阈值决定是否透明化（这里假设背景是较亮区域）
+        if (brightness > threshold / 255) {
+          data[i + 3] = 0; // 设置透明度为0（完全透明）
+        }
+      }
+      
+      // 应用边缘平滑
+      if (smoothness > 0) {
+        smoothEdges(imageData, smoothness);
+      }
+      
+      // 将处理后的数据放回画布
+      ctx.putImageData(imageData, 0, 0);
+    }
+    
+    // 边缘平滑处理
+    function smoothEdges(imageData, radius) {
+      const data = imageData.data;
+      const width = imageData.width;
+      const height = imageData.height;
+      
+      // 创建数据副本用于计算
+      const tempData = new Uint8ClampedArray(data);
+      
+      // 简单的高斯模糊效果来平滑边缘
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const index = (y * width + x) * 4;
+          
+          // 如果当前像素是透明的，跳过
+          if (tempData[index + 3] === 0) continue;
+          
+          let count = 0;
+          let alphaSum = 0;
+          
+          // 检查周围像素
+          for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+              const nx = Math.min(width - 1, Math.max(0, x + dx));
+              const ny = Math.min(height - 1, Math.max(0, y + dy));
+              const nIndex = (ny * width + nx) * 4;
+              
+              alphaSum += tempData[nIndex + 3];
+              count++;
+            }
+          }
+          
+          // 计算平均透明度
+          data[index + 3] = Math.min(255, alphaSum / count);
+        }
+      }
+    }
+    
+    // 重置预览
+    function resetPreview() {
+      if (currentImage) {
+        ctx.drawImage(currentImage, 0, 0);
+      }
+    }
+    
+    // 下载结果
+    function downloadResult() {
+      try {
+        const link = document.createElement('a');
+        link.download = '抠图结果.png';
+        link.href = resultCanvas.toDataURL('image/png');
+        link.click();
+      } catch (error) {
+        alert('下载失败，请重试');
+        console.error('下载错误:', error);
+      }
+    }
+    
+    // 初始化应用
+    window.addEventListener('DOMContentLoaded', initEvents);
+  </script>
+</body>
+</html>
